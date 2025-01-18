@@ -1,101 +1,166 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Head from "next/head";
+import TextInput from "../components/TextInput";
+import NavBar from "../components/NavBar";
+import Drawer from "../components/Drawer";
+import ChatBox from '../components/ChatBox';
+import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import { API_ENDPOINTS } from "../config.js";
+
+const Page = () => {
+  const [userId, setUserId] = useState(null);
+  const [convId, setConvId] = useState<string | null>(null);
+  const [inputValue, setInputValue] = useState("");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  interface Message {
+    type: 'user' | 'agent';
+    content: string;
+  }
+  const [messages, setMessages] = useState<Message[]>([]);
+  const mainContentRef = useRef<HTMLDivElement>(null);
+
+  // upon initial mount (first time only), create user and conversation
+  useEffect(() => {
+    const initializeChat = async () => {
+      try {
+        // Create user
+        const userResponse = await axios.post(API_ENDPOINTS.POST_CREATE_USER);
+        if (userResponse.status !== 201) {
+          console.error("Failed to create user");
+          return;
+        }
+        const newUserId = userResponse.data.user_id;
+        setUserId(newUserId);
+
+        // Create conversation
+        const convResponse = await axios.post(
+          API_ENDPOINTS.POST_CREATE_CONV,
+          { user_id: newUserId }
+        );
+        if (convResponse.status !== 201) {
+          console.error("Failed to create conversation");
+          return;
+        }
+        const newConvId = convResponse.data.conv_id;
+        setConvId(newConvId);
+      } catch (error) {
+        console.error("Error initializing chat:", error);
+      }
+    };
+    initializeChat();
+  }, []);
+
+  // open and close drawer
+  const handleDrawerToggle = () => {
+    setIsDrawerOpen(!isDrawerOpen);
+  };
+
+  // close drawer when clicking outside the drawer (CAREFUL)
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      isDrawerOpen && 
+      mainContentRef.current && 
+      event.target instanceof Node && // Type guard for event.target
+      mainContentRef.current.contains(event.target)
+    ) {
+      setIsDrawerOpen(false);
+    }
+  };
+
+  // if drawer is open, listen to mouse clicks outside the drawer
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDrawerOpen]);
+
+  // const handleClick = async () => {
+  //   try {
+  //     const response = await axios.post(`${API_BASE_URL}/chat/`);
+  //     console.log("Response from backend:", response.data);
+  //     setInputValue(response.data.message);
+  //   } catch (error) {
+  //     console.error("Error fetching data:", error);
+  //   }
+  // };
+
+  const handleSendMessage = async () => {
+    try {
+        // Add user message
+        setMessages((prev: Message[]) => [...prev, { type: 'user', content: inputValue }]);
+        const userMessage = inputValue;
+        setInputValue('');
+        const url: string = API_ENDPOINTS.PUT_UPDATE_CONV.replace(':convId', convId as string);
+        const response = await axios.put(`${url}`,
+          { user_id: userId, message: userMessage }
+        );
+        if (response.status !== 200) {
+          console.error("Failed to get message from agent.");
+          return;
+        }
+        // Add LLM response
+        setMessages((prev: Message[]) => [...prev, { type: 'agent', content: response.data.message }]);
+    } catch (error) {
+        console.error("Error fetching data:", error);
+    }
+};
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div 
+      className="relative min-h-screen before:content-[''] before:absolute before:inset-0 before:bg-black/10"
+      style={{
+        backgroundImage: "url('/bg.jpeg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed'
+      }}>
+      <Drawer isOpen={isDrawerOpen} />
+      <div 
+        ref={mainContentRef}
+        className={`min-h-screen transition-transform duration-300 ease-in-out ${
+          isDrawerOpen ? 'translate-x-80' : 'translate-x-0'
+        }`}
+      >
+        <NavBar onMenuClick={handleDrawerToggle} />
+        <div className="p-4">
+          <Head>
+            <title>Next.js + Tailwind CSS</title>
+            <meta name="description" content="Next.js + Tailwind CSS" />
+            <link rel="icon" href="/favicon.ico" />
+            <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet" />
+          </Head>
+          <main className="text-center pt-16">
+          <h1 className={"text-4xl font-normal text-ededed tracking-wide mb-6 font-['Montserrat']"}>
+              Chat with me!
+            </h1>
+            <div className="w-[47.2%] mx-auto h-[calc(100vh-300px)] mb-4 rounded-lg border border-zinc-400/30 bg-zinc-800/10 shadow-2xl shadow-zinc-950/90 backdrop-blur-sm">
+              <ChatBox messages={messages} />
+            </div>
+            <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 p-4 w-[60%] mb-4">
+              <div className="relative flex items-center w-full">
+                <TextInput 
+                  content={inputValue} 
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInputValue(e.target.value)}
+                  onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                      setInputValue(''); 
+                    }
+                  }}
+                  className="w-full min-h-[80px] pr-16 pl-4 py-2 text-zinc-200 rounded-lg border border-zinc-400/30 bg-zinc-800/10 focus:outline-none focus:border-zinc-400 shadow-2xl shadow-zinc-950/90 hover:shadow-2xl transition-shadow duration-300 backdrop-blur-sm placeholder:text-neutral-400"
+                />
+              </div>
+            </div>
+          </main>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
-}
+};
+
+export default Page;
