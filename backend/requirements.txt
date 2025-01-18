@@ -3,9 +3,9 @@ uvicorn==0.34.0
 pydantic==2.10.5
 mangum==0.19.0
 bson==0.5.10
-motor==2.4.0
-beanie==1.8.0
-python-dotenv==0.19.2
+motor==3.6.1
+beanie==1.29.0
+python-dotenv==1.0.1
 langchain==0.3.14
 langchain-community==0.3.14
 langgraph==0.2.64

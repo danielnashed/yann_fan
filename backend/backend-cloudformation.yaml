@@ -1,0 +1,114 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                  - dynamodb:*
+                  - s3:*
+                Resource: '*'
+
+  FastAPILambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Role: !GetAtt LambdaExecutionRole.Arn
+      FunctionName: FastAPI-Lambda
+      Code:
+        ImageUri: "343218180642.dkr.ecr.us-east-1.amazonaws.com/yann-fan:latest" # to be replaced later by GitHub Actions
+      PackageType: Image
+      Timeout: 120  # timeout
+      MemorySize: 128  # memory size
+
+  API:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: FastAPI-API
+      Description: Backend Endpoint
+
+  ProxyResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt API.RootResourceId
+      PathPart: '{proxy+}'  # Wildcard to capture all paths
+      RestApiId: !Ref API
+
+  ProxyMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: ANY  # Any HTTP method (GET, POST, PUT, DELETE, etc.)
+      ResourceId: !Ref ProxyResource
+      RestApiId: !Ref API
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - arn:aws:apigateway:${Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations
+          - {
+              Region: !Ref "AWS::Region",
+              LambdaArn: !GetAtt FastAPILambdaFunction.Arn
+            }
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: "'https://simple-rag-app.vercel.app'"
+            method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Headers: true
+
+  # # Deployment
+  # APIDeployment:
+  #   Type: AWS::ApiGateway::Deployment
+  #   DependsOn: ProxyMethod
+  #   Properties:
+  #     RestApiId: !Ref API
+  #     StageName: v1  # This is a shorthand way to create a stage
+  #     Description: Initial deployment for the API
+
+  # # Stage (more detailed configuration)
+  # ApiStage:
+  #   Type: AWS::ApiGateway::Stage
+  #   Properties:
+  #     RestApiId: !Ref API
+  #     DeploymentId: !Ref APIDeployment
+  #     StageName: production
+  #     Description: Production stage
+  #     MethodSettings:
+  #       - HttpMethod: "*"
+  #         ResourcePath: "/*"
+  #         CachingEnabled: false
+  #         MetricsEnabled: true
+  #         LoggingLevel: INFO
+  #         DataTraceEnabled: true
+
+  LambdaApiGatewayInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref FastAPILambdaFunction
+      Principal: apigateway.amazonaws.com
+
+Outputs:
+  APIEndpoint:
+    Description: "API Gateway URL"
+    Value: !Sub "https://${API}.execute-api.${AWS::Region}.amazonaws.com/prod/{proxy+}"
