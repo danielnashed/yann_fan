@@ -10,5 +10,5 @@ export const API_ENDPOINTS = {
     GET_ALL_CONV: API_BASE_URL + 'conversations/',
     PUT_UPDATE_CONV: `${API_BASE_URL}conversations/:convId`,
     DELETE_CONV: `${API_BASE_URL}conversations/:convId`,
-    POST_UPLOAD_DOCS: API_BASE_URL + 'upload/'
+    POST_UPLOAD_DOCS: `${API_BASE_URL}upload/:userId`
 };

@@ -33,6 +33,7 @@ const Page = () => {
         }
         const newUserId = userResponse.data.user_id;
         setUserId(newUserId);
+        localStorage.setItem('userId', newUserId);
 
         // Create conversation
         const convResponse = await axios.post(
@@ -135,7 +136,7 @@ const Page = () => {
           </Head>
           <main className="text-center pt-16">
           <h1 className={"text-4xl font-normal text-ededed tracking-wide mb-6 font-['Montserrat']"}>
-              Chat with me!
+              Ask me anything about Yann Lecun!
             </h1>
             <div className="w-[47.2%] mx-auto h-[calc(100vh-300px)] mb-4 rounded-lg border border-zinc-400/30 bg-zinc-800/10 shadow-2xl shadow-zinc-950/90 backdrop-blur-sm">
               <ChatBox messages={messages} />

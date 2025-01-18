@@ -2,13 +2,17 @@ import { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
+import { API_ENDPOINTS } from "../config.js";
+import axios from 'axios';
 
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 export default function Modal() {  
     const [uploadedFiles, setUploadedFiles] = useState([]);
+    const [uploadProgress, setUploadProgress] = useState({});
+    const [isUploading, setIsUploading] = useState(false);
 
-    const handleFileUpload = (event) => {
+    const handleFileUpload = async (event) => {
         const files = Array.from(event.target.files);
         const filesWithPreviews = files.map((file) => ({
             file,
@@ -16,6 +20,42 @@ export default function Modal() {
             preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : null,
         }));
         setUploadedFiles((prevFiles) => [...prevFiles, ...filesWithPreviews]);
+
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            console.error('User ID not found');
+            return;
+        }
+
+        const formData = new FormData();
+        files.forEach((file) => {
+            formData.append('files', file);
+        });
+
+        try {
+            setIsUploading(true);
+            const url = API_ENDPOINTS.POST_UPLOAD_DOCS.replace(':userId', userId);
+            const response = await axios.post(`${url}`, 
+                formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+                onUploadProgress: (progressEvent) => {
+                    const percentCompleted = Math.round(
+                        (progressEvent.loaded * 100) / progressEvent.total
+                    );
+                    setUploadProgress((prev) => ({
+                        ...prev,
+                        [files[0].name]: percentCompleted,
+                    }));
+                },
+            });
+            console.log('Upload successful:', response.data);
+        } catch (error) {
+            console.error('Error uploading files:', error);
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     return (

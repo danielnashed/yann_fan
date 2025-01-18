@@ -16,7 +16,7 @@ export default function NavBar({ onMenuClick }) {
                 </button>
             </div>
             <div className="flex-1">
-                <span className="text-xl font-normal font-['Montserrat']">RAG App</span>
+                <span className="text-xl font-normal font-['Montserrat']">Yann Fan RAG App</span>
             </div>
             <div className="flex-none">
                 <div className="dropdown dropdown-left dropdown-hover">
@@ -35,8 +35,8 @@ export default function NavBar({ onMenuClick }) {
                         </svg>
                     </button>
                     <ul tabIndex={0} className="dropdown-content menu bg-zinc-900/70 rounded-box z-[1] w-52 p-2 shadow-zinc-800 shadow-lg bg-blend-darken">
-                        <li><a>Upload to Memory</a></li>
-                        <li><a onClick={handleViewMemory}>View Memory</a></li>
+                        <li><a>Examples</a></li>
+                        <li><a onClick={handleViewMemory}>Memory</a></li>
                     </ul>
                     <Modal />
                 </div>
