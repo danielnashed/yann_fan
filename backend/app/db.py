@@ -4,6 +4,7 @@ from beanie import init_beanie
 from dotenv import load_dotenv
 import os
 from pathlib import Path
+from .models import ConversationDocument, UserDocument  # Import all models here
 
 # Load environment variables from .env file
 load_dotenv(Path(__file__).parent.parent / '.env')
@@ -18,7 +19,7 @@ database = client["mydatabase"]
 # Beanie initialization
 async def init():
     # Initialize Beanie with the database and all the document models
-    await init_beanie(database, document_models=[])
+    await init_beanie(database, document_models=[ConversationDocument, UserDocument])
 
 
 # Function to get the next sequence value
