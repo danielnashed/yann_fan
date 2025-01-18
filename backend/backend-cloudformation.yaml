@@ -26,7 +26,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Role: !GetAtt LambdaExecutionRole.Arn
-      FunctionName: FastAPI-Lambda
+      FunctionName: Yann-Fan-Backend-Lambda
       Code:
         ImageUri: "343218180642.dkr.ecr.us-east-1.amazonaws.com/yann-fan:latest" # to be replaced later by GitHub Actions
       PackageType: Image
@@ -36,7 +36,7 @@ Resources:
   API:
     Type: AWS::ApiGateway::RestApi
     Properties:
-      Name: FastAPI-API
+      Name: Yann-Fan-Backend-API
       Description: Backend Endpoint
 
   ProxyResource:
@@ -65,7 +65,7 @@ Resources:
         IntegrationResponses:
         - StatusCode: 200
           ResponseParameters:
-            method.response.header.Access-Control-Allow-Origin: "'https://simple-rag-app.vercel.app'"
+            method.response.header.Access-Control-Allow-Origin: "'https://yann-fan.vercel.app'"
             method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
             method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
 
