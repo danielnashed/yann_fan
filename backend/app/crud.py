@@ -3,6 +3,7 @@ from typing import Optional, List
 from .models import ConversationDocument, UserDocument
 from fastapi import HTTPException
 from bson import ObjectId
+from .agent.llm_agent import ChatAgent
 from .db import get_next_sequence_value
 
 class ConversationCRUD():
@@ -36,7 +37,18 @@ class ConversationCRUD():
         conv = await ConversationCRUD.get_conversation_by_id(conv_id, user_id)
         user = await UserCRUD.get_user_by_id(ObjectId(user_id))
         if conv:
-            conv.graph_state = {"key": "value"}
+            chat_agent = ChatAgent(user_id=user.auto_increment_id) # create agent
+            # Process message with LangGraph agent
+            state = chat_agent.deserialize_state(
+                conv.graph_state
+            )
+            agent_result = chat_agent.process_user_message(
+                message,
+                state,
+            )
+            # Update graph state
+            conv.graph_state = chat_agent.serialize_state(
+                agent_result['state'])
             conv.updated_at = datetime.now()
             await conv.save()
         return conv
