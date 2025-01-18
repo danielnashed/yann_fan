@@ -1,10 +1,54 @@
-# conversation_crud.py
 from datetime import datetime
 from typing import Optional, List
 from .models import ConversationDocument, UserDocument
 from fastapi import HTTPException
 from bson import ObjectId
 from .db import get_next_sequence_value
+
+class ConversationCRUD():
+    # Create a new Conversation
+    @staticmethod
+    async def create_conversation(user_id: str) -> ConversationDocument:
+        # Ensure the user exists
+        user = await UserCRUD.get_user_by_id(ObjectId(user_id))
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        conv = ConversationDocument(user_id=user_id, 
+                                    graph_state={}, 
+                                    created_at=datetime.now(), 
+                                    updated_at=datetime.now())
+        await conv.insert()
+        return conv
+
+    # Get a Conversation by ID for a specific user
+    @staticmethod
+    async def get_conversation_by_id(conv_id: str, user_id: str) -> Optional[ConversationDocument]:
+        return await ConversationDocument.find_one({"_id": ObjectId(conv_id), "user_id": user_id})
+
+    # Get all Conversations for a specific user
+    @staticmethod
+    async def get_all_conversations_by_user_id(user_id: str) -> List[ConversationDocument]:
+        return await ConversationDocument.find({"user_id": user_id}).to_list()
+
+    # Update a Conversation for a specific user
+    @staticmethod
+    async def update_conversation(conv_id: str, user_id: str, message: str) -> Optional[ConversationDocument]:
+        conv = await ConversationCRUD.get_conversation_by_id(conv_id, user_id)
+        user = await UserCRUD.get_user_by_id(ObjectId(user_id))
+        if conv:
+            conv.graph_state = {"key": "value"}
+            conv.updated_at = datetime.now()
+            await conv.save()
+        return conv
+
+    # Delete a Conversation for a specific user
+    @staticmethod
+    async def delete_conversation(conv_id: str, user_id: str) -> dict:
+        conv = await ConversationCRUD.get_conversation_by_id(conv_id, user_id)
+        if conv:
+            await conv.delete()
+            return {"message": "Conversation deleted"}
+        return {"message": "Conversation not found"}
 
 
 class UserCRUD():
