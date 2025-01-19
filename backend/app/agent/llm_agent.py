@@ -10,12 +10,12 @@ from typing import Annotated, Dict
 from typing_extensions import TypedDict
 from .prompts import Prompts
 import os
+import uuid
 from pydantic import BaseModel
+from .tools.vector_db_tool import VectorDBTool
 
 class TavilySearchAPIWrapper(BaseModel):
     tavily_api_key: str
-
-# from .tools.save_off_resume import SaveResumeTool
 
 load_dotenv(Path(__file__).parent.parent / '.env')
 tavily_api_key = os.getenv('TAVILY_API_KEY')
@@ -39,6 +39,7 @@ class ChatAgent:
                 api_key=groq_api_key,
             )
         tools = [
+            # VectorDBTool(user_id=user_id),
             # TavilySearchResults(max_results=4,
             #                     api_wrapper=TavilySearchAPIWrapper(tavily_api_key=tavily_api_key)),
             # WebScraperTool(),
@@ -66,6 +67,16 @@ class ChatAgent:
         """
 
         state["messages"] = add_messages(state["messages"], HumanMessage(message))
+        # force agent to invoke RAG tool 
+        retrieval_results = VectorDBTool(user_id=self.user_id)._run(message)
+        print(retrieval_results)
+        # Create ToolMessage with required tool_call_id
+        tool_message = ToolMessage(
+            content=retrieval_results,
+            tool_call_id=str(uuid.uuid4())[:8]
+        )
+        # Add ToolMessage to the state
+        state["messages"] = add_messages(state["messages"], tool_message)
         result = self.graph.invoke(state)
         response = result["messages"][-1].content
         state["messages"] = result["messages"]
@@ -131,7 +142,7 @@ class ChatAgent:
 # Run from backend/ directory like `python -m app.agent.llm_agent`
 if __name__ == "__main__":
 
-    agent = ChatAgent(user_id=1)
+    agent = ChatAgent(user_id='123')
     print('created agent...')
 
     # Send the message to the agent and process the response
