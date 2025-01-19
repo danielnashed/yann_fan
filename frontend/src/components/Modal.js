@@ -34,6 +34,7 @@ export default function Modal() {
 
         try {
             setIsUploading(true);
+            console.log(isUploading);
             const url = API_ENDPOINTS.POST_UPLOAD_DOCS.replace(':userId', userId);
             const response = await axios.post(`${url}`, 
                 formData, {
@@ -48,6 +49,7 @@ export default function Modal() {
                         ...prev,
                         [files[0].name]: percentCompleted,
                     }));
+                    console.log(uploadProgress);
                 },
             });
             console.log('Upload successful:', response.data);
