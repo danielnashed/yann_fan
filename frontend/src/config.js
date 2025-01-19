@@ -1,5 +1,5 @@
-const API_BASE_URL = 'http://127.0.0.1:8000/';
-// const API_BASE_URL =  'https://wge6ph8070.execute-api.us-east-1.amazonaws.com/prod/';
+// const API_BASE_URL = 'http://127.0.0.1:8000/';
+const API_BASE_URL =  'https://wge6ph8070.execute-api.us-east-1.amazonaws.com/prod/';
 
 export const API_ENDPOINTS = {
     POST_CREATE_USER: API_BASE_URL + 'users/',
