@@ -2,6 +2,8 @@
 
 A RAG App for Yann LeCun fans out there! 
 
+#### Check out deployed app at `https://yann-fan.vercel.app`
+
 ## Tech Stack
 
 * FastAPI (for backend)

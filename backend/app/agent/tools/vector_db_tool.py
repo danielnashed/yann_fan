@@ -93,7 +93,7 @@ def get_embeddings(
             "embedding_type": "float",
         }
 
-        response = requests.post(JINA_EMBEDDINGS_URL, headers=headers, json=data)
+        response = requests.post("https://api.jina.ai/v1/embeddings", headers=headers, json=data)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
