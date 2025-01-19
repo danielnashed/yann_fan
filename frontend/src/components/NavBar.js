@@ -1,10 +1,38 @@
 import Modal from './Modal';
+import axios from 'axios';
+import { API_ENDPOINTS } from "../config.js";
 
-export default function NavBar({ onMenuClick }) {
+export default function NavBar({ onMenuClick, setConvId, setMessages, convId, messages }) {
 
     const handleViewMemory = () => {
         document.getElementById('my_modal_3').showModal();
     };
+
+    const handleNewChat = async () => {
+        
+        const userId = localStorage.getItem('userId');
+
+        // Save current chat before creating new one
+        const History = {
+            convId,
+            messages,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('chatHistory', JSON.stringify(History));
+
+        // Create new conversation
+        const convResponse = await axios.post(
+            API_ENDPOINTS.POST_CREATE_CONV,
+            { user_id: userId }
+            );
+        if (convResponse.status !== 201) {
+        console.error("Failed to create conversation");
+        return;
+        }
+        const newConvId = convResponse.data.conv_id;
+        setConvId(newConvId); // Update parent state
+        setMessages([]); // Clear messages
+    }
 
     return (
         <div className="navbar bg-base-100 bg-zinc-800/0 fixed top-0 w-full z-50">
@@ -35,7 +63,8 @@ export default function NavBar({ onMenuClick }) {
                         </svg>
                     </button>
                     <ul tabIndex={0} className="dropdown-content menu bg-zinc-900/70 rounded-box z-[1] w-52 p-2 shadow-zinc-800 shadow-lg bg-blend-darken">
-                        <li><a>Examples</a></li>
+                        {/* <li><a>Examples</a></li> */}
+                        <li><a onClick={handleNewChat}>New Chat</a></li>
                         <li><a onClick={handleViewMemory}>Memory</a></li>
                     </ul>
                     <Modal />

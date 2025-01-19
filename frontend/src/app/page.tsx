@@ -119,14 +119,22 @@ const Page = () => {
         backgroundRepeat: 'no-repeat',
         backgroundAttachment: 'fixed'
       }}>
-      <Drawer isOpen={isDrawerOpen} />
+      <Drawer 
+      isOpen={isDrawerOpen}
+      setMessages={setMessages} 
+      setConvId={setConvId} />
       <div 
         ref={mainContentRef}
         className={`min-h-screen transition-transform duration-300 ease-in-out ${
           isDrawerOpen ? 'translate-x-80' : 'translate-x-0'
         }`}
       >
-        <NavBar onMenuClick={handleDrawerToggle} />
+        <NavBar 
+          onMenuClick={handleDrawerToggle}
+          setConvId={setConvId}
+          setMessages={setMessages}
+          convId={convId}
+          messages={messages} />
         <div className="p-4">
           <Head>
             <title>Next.js + Tailwind CSS</title>
