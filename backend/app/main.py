@@ -2,6 +2,24 @@ from fastapi import FastAPI
 from app.routes import users, conversations, documents
 from app.middleware import setup_middleware
 from app.db import init as init_db
+import requests
+from requests.exceptions import RequestException
+
+# Function to check for network connectivity
+def check_network_connectivity():
+    test_url = "https://httpbin.org/get"  # Using a public endpoint for the test
+    try:
+        response = requests.get(test_url, timeout=5)  # 5 seconds timeout for the test
+        if response.status_code == 200:
+            print("Network connectivity test passed.")
+        else:
+            raise Exception(f"Network connectivity test failed with status code: {response.status_code}")
+    except RequestException as e:
+        print(f"Error: Network connectivity test failed. Exception: {str(e)}")
+        raise e
+
+# Perform network connectivity check on Lambda startup
+check_network_connectivity()
 
 app = FastAPI(title="My Backend API")
 

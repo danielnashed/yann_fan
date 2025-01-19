@@ -17,6 +17,9 @@ A RAG App for Yann LeCun fans out there!
 * MongoDB (for noSQL database)
 * Pinecone (for vector database)
 
+## CI/CD
+* Any pushes to prod branch will automatically build a docker image and push it to AWS ECR as well as deploy frontend to Vercel server.
+
 ## Backend
 
 ### Setup (on local machine)
