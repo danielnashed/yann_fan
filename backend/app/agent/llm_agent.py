@@ -43,7 +43,6 @@ class ChatAgent:
             # TavilySearchResults(max_results=4,
             #                     api_wrapper=TavilySearchAPIWrapper(tavily_api_key=tavily_api_key)),
             # WebScraperTool(),
-            # PDFParserTool(),
         ]
 
         prompts = Prompts()
