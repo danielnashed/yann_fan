@@ -23,6 +23,9 @@ class VectorDBTool(BaseTool):
     def _run(self, query: str) -> Dict[str, Any]:
         """Execute vector search query."""
         try:
+            print('agent using vector db tool now.')
+            print('user id: ', str(self.user_id))
+            print('query: ', query)
             index = connect_to_index()
             embeddings = get_embeddings(inputs=[query],  # List of text or image URLs
                                         dim=1024,
@@ -35,15 +38,43 @@ class VectorDBTool(BaseTool):
             results = index.query(
                 namespace=str(self.user_id),
                 vector=query_embedding,
-                top_k=5,
+                top_k=3,
                 include_values=False,
                 include_metadata=True
             )
             processed_results = '.\n'.join([f"{match['metadata']['content']}" for match in results['matches']])
+            print('retrieval results from vector db: ', processed_results)
             return processed_results
         except Exception as e:
             return f"Query on vector database failed: {str(e)}"
 
+
+# def embed_and_upsert(inputs: List[Dict[str, Any]], user_id: int) -> Dict[str, str]:
+#     """Embed and upsert documents to vector database."""
+#     try:
+#         index = connect_to_index()
+#         print('connected to index')
+#         vectors = []
+#         # Embed all documents and store them in vectors
+#         for item in inputs:
+#             embeddings = get_embeddings([item["content"]],
+#                             dim=1024,
+#                             JINA_API_KEY=os.getenv('JINA_API_KEY'),
+#                             JINA_EMBEDDINGS_URL=os.getenv('JINA_EMBEDDINGS_URL'),
+#                             ) 
+#             print('embeddings created')
+#             embedding = embeddings["data"][0]["embedding"]
+#             vectors.append({
+#                 "id": item['id'],
+#                 "values": embedding,
+#                 "metadata": {'content': item['content'], 'modality': item['modality']}
+#             })
+#         # Upsert all vectors to Pinecone
+#         index.upsert(vectors=vectors, namespace=str(user_id))
+#         print('upserted to vector database')
+#         return {'message': 'Updated vector database successfully'}
+#     except Exception as e:
+#         raise RuntimeError(f"Upsert into vector database failed: {str(e)}")
 
 def embed_and_upsert(inputs: List[Dict[str, Any]], user_id: int) -> Dict[str, str]:
     """Embed and upsert documents to vector database."""
@@ -51,19 +82,22 @@ def embed_and_upsert(inputs: List[Dict[str, Any]], user_id: int) -> Dict[str, st
         index = connect_to_index()
         print('connected to index')
         vectors = []
-        # Embed all documents and store them in vectors
-        for item in inputs:
-            embeddings = get_embeddings([item["content"]],
-                            dim=1024,
-                            JINA_API_KEY=os.getenv('JINA_API_KEY'),
-                            JINA_EMBEDDINGS_URL=os.getenv('JINA_EMBEDDINGS_URL'),
-                            ) 
-            print('embeddings created')
-            embedding = embeddings["data"][0]["embedding"]
+        formatted_inputs = [{i["modality"]: i["content"] } for i in inputs]
+        # Embed all documents
+        print('JINA_API_KEY: ', os.getenv('JINA_API_KEY'))
+        print('JINA_EMBEDDINGS_URL: ', os.getenv('JINA_EMBEDDINGS_URL'))
+        embeddings = get_embeddings(
+                        inputs=formatted_inputs,
+                        dim=1024,
+                        JINA_API_KEY=os.getenv('JINA_API_KEY'),
+                        JINA_EMBEDDINGS_URL=os.getenv('JINA_EMBEDDINGS_URL'),
+                        ) 
+        print('embeddings created')
+        for i, embedding in enumerate(embeddings["data"]):
             vectors.append({
-                "id": item['id'],
-                "values": embedding,
-                "metadata": {'content': item['content'], 'modality': item['modality']}
+                "id": inputs[i]["id"],
+                "values": embedding["embedding"],
+                "metadata": {'content': inputs[i]["content"], 'modality': inputs[i]["modality"]}
             })
         # Upsert all vectors to Pinecone
         index.upsert(vectors=vectors, namespace=str(user_id))
@@ -71,7 +105,6 @@ def embed_and_upsert(inputs: List[Dict[str, Any]], user_id: int) -> Dict[str, st
         return {'message': 'Updated vector database successfully'}
     except Exception as e:
         raise RuntimeError(f"Upsert into vector database failed: {str(e)}")
-        
 
 def get_embeddings(
     inputs: List[str],  # List of text or image URLs
@@ -92,8 +125,9 @@ def get_embeddings(
             "normalized": True,
             "embedding_type": "float",
         }
-
+        print("sending request to JINA Embedder")
         response = requests.post("https://api.jina.ai/v1/embeddings", headers=headers, json=data)
+        print("received response from JINA Embedder", response)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:

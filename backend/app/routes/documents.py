@@ -45,6 +45,7 @@ async def upload_files(
                 raise HTTPException(status_code=400, detail="Unsupported file type")
             # Add to processed files list
             for i, chunk in enumerate(chunks):
+                print(f'\n\nProcessing chunk {i+1}: {chunk}')
                 processed_files.append({
                     "id": f"{id}_{i}",
                     "modality": modality,

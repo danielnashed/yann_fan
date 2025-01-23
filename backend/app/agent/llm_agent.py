@@ -69,7 +69,7 @@ class ChatAgent:
         state["messages"] = add_messages(state["messages"], HumanMessage(message))
         # force agent to invoke RAG tool 
         retrieval_results = VectorDBTool(user_id=self.user_id)._run(message)
-        print(retrieval_results)
+        # print(retrieval_results)
         # Create ToolMessage with required tool_call_id
         tool_message = ToolMessage(
             content=retrieval_results,
