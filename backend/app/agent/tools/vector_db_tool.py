@@ -99,6 +99,8 @@ def embed_and_upsert(inputs: List[Dict[str, Any]], user_id: int) -> Dict[str, st
                 "values": embedding["embedding"],
                 "metadata": {'content': inputs[i]["content"], 'modality': inputs[i]["modality"]}
             })
+        print('vectors created')
+        print('vectors: ', vectors)
         # Upsert all vectors to Pinecone
         index.upsert(vectors=vectors, namespace=str(user_id))
         print('upserted to vector database')
