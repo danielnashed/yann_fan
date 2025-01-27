@@ -25,6 +25,7 @@ async def upload_files(
             clean_filename = '_'.join(file.filename.split())
             id = clean_filename +  '_' + str(uuid.uuid4())[:8]
             content = await file.read() # Read file content as bytes stream
+            print('file byte content: ', content)
             await file.seek(0)  # Reset file pointer
             print('file content type: ', file.content_type)
             # Process each file 

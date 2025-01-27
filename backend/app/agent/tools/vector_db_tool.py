@@ -83,6 +83,7 @@ def embed_and_upsert(inputs: List[Dict[str, Any]], user_id: int) -> Dict[str, st
         print('connected to index')
         vectors = []
         formatted_inputs = [{i["modality"]: i["content"] } for i in inputs]
+        print('formatted inputs: ', formatted_inputs)
         # Embed all documents
         print('JINA_API_KEY: ', os.getenv('JINA_API_KEY'))
         print('JINA_EMBEDDINGS_URL: ', os.getenv('JINA_EMBEDDINGS_URL'))
@@ -93,6 +94,7 @@ def embed_and_upsert(inputs: List[Dict[str, Any]], user_id: int) -> Dict[str, st
                         JINA_EMBEDDINGS_URL=os.getenv('JINA_EMBEDDINGS_URL'),
                         ) 
         print('embeddings created')
+        print('embeddings: ', embeddings)
         for i, embedding in enumerate(embeddings["data"]):
             vectors.append({
                 "id": inputs[i]["id"],
