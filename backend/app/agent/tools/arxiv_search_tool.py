@@ -19,9 +19,9 @@ class ArXivSearchTool(BaseTool):
 
     def _run(self, query: str, max_chunk_size: int = 2000, min_chunk_size: int = 1500) -> List:
         try:
-            # Retrieve document from Arxiv and extract text
+            # Retrieve a single paper from Arxiv and extract a summary text from paper. Input is a query string. Output is the extracted text content.
             retriever = ArxivRetriever(load_max_docs=1)
-            doc = retriever.invoke(query)
+            doc = retriever.invoke(query + " Yann LeCun")
             text = doc.page_content
             metadata = doc.metadata
 

@@ -1,5 +1,8 @@
 from dotenv import load_dotenv
 from langchain_community.tools.tavily_search import TavilySearchResults
+# from langchain_community.tools.wikidata.tool import WikidataAPIWrapper, WikidataQueryRun
+from langchain_community.tools import WikipediaQueryRun
+from langchain_community.utilities import WikipediaAPIWrapper
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage, FunctionMessage, messages_to_dict
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
@@ -11,10 +14,9 @@ from typing import Annotated, Dict
 from typing_extensions import TypedDict
 from .prompts import Prompts
 import os
-import uuid
 from pydantic import BaseModel
 from .tools.vector_db_tool import VectorDBTool
-from .tools.arxiv_search_tool import ArXivSearchTool
+# from .tools.arxiv_search_tool import ArXivSearchTool
 
 class TavilySearchAPIWrapper(BaseModel):
     tavily_api_key: str
@@ -49,8 +51,8 @@ class ChatAgent:
             VectorDBTool(user_id=user_id),
             # ArXivSearchTool(user_id=user_id),
             TavilySearchResults(max_results=3),
-            #                     api_wrapper=TavilySearchAPIWrapper(tavily_api_key=tavily_api_key)),
-            # WebScraperTool(),
+            # WikidataQueryRun(api_wrapper=WikidataAPIWrapper()),
+            WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper()),
         ]
         llm = llm.bind_tools(tools)
         prompts = Prompts()
@@ -74,7 +76,8 @@ class ChatAgent:
         """
 
         state["messages"] = add_messages(state["messages"], HumanMessage(message))
-        # # force agent to invoke RAG tool 
+
+        # # Use this to force agent to invoke RAG tool 
         # retrieval_results = VectorDBTool(user_id=self.user_id)._run(message)
         # # print(retrieval_results)
         # # Create ToolMessage with required tool_call_id
@@ -84,6 +87,7 @@ class ChatAgent:
         # )
         # # Add ToolMessage to the state
         # state["messages"] = add_messages(state["messages"], tool_message)
+
         result = self.graph.invoke(state)
         response = result["messages"][-1].content
         state["messages"] = result["messages"]
