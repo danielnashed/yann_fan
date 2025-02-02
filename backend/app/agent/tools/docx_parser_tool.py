@@ -23,6 +23,9 @@ class DOCXParserTool(BaseTool):
             # Remove invalid unicode characters
             cleaned_text = re.sub(r"/uni[0-9a-fA-F]+", "", text).strip()
 
+            # Replace tabs with spaces to save space in context window
+            cleaned_text = cleaned_text.replace("\t", " ")
+
             # Chunk the extracted text
             chunks = chunk_text_by_paragraphs(cleaned_text, max_chunk_size, min_chunk_size)
             return chunks

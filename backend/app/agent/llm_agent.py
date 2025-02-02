@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage, FunctionMessage, messages_to_dict
 from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import create_react_agent
@@ -13,6 +14,7 @@ import os
 import uuid
 from pydantic import BaseModel
 from .tools.vector_db_tool import VectorDBTool
+from .tools.arxiv_search_tool import ArXivSearchTool
 
 class TavilySearchAPIWrapper(BaseModel):
     tavily_api_key: str
@@ -20,8 +22,9 @@ class TavilySearchAPIWrapper(BaseModel):
 load_dotenv(Path(__file__).parent.parent / '.env')
 tavily_api_key = os.getenv('TAVILY_API_KEY')
 groq_api_key = os.getenv("GROQ_API_KEY")
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
-
+# State is a dictionary with 1 key: "messages" which is a list of messages
 class State(TypedDict):
     messages: Annotated[list, add_messages]
 
@@ -33,18 +36,23 @@ class ChatAgent:
 
     def _build_graph(self, user_id: int):
         llm = ChatGroq(
-                model="llama-3.2-1b-preview",
+                model="llama-3.1-8b-instant", # "llama-3.2-1b-preview", 
                 temperature=0.0,
                 max_retries=2,
                 api_key=groq_api_key,
             )
+        # llm = ChatOpenAI(
+        #     model='gpt-4o',
+        #     api_key=openai_api_key,
+        # )
         tools = [
-            # VectorDBTool(user_id=user_id),
-            # TavilySearchResults(max_results=4,
+            VectorDBTool(user_id=user_id),
+            # ArXivSearchTool(user_id=user_id),
+            TavilySearchResults(max_results=3),
             #                     api_wrapper=TavilySearchAPIWrapper(tavily_api_key=tavily_api_key)),
             # WebScraperTool(),
         ]
-
+        llm = llm.bind_tools(tools)
         prompts = Prompts()
         system_message = SystemMessage(prompts.store['system'])
         agent = create_react_agent(llm, tools, state_modifier=system_message)
@@ -66,16 +74,16 @@ class ChatAgent:
         """
 
         state["messages"] = add_messages(state["messages"], HumanMessage(message))
-        # force agent to invoke RAG tool 
-        retrieval_results = VectorDBTool(user_id=self.user_id)._run(message)
-        # print(retrieval_results)
-        # Create ToolMessage with required tool_call_id
-        tool_message = ToolMessage(
-            content=retrieval_results,
-            tool_call_id=str(uuid.uuid4())[:8]
-        )
-        # Add ToolMessage to the state
-        state["messages"] = add_messages(state["messages"], tool_message)
+        # # force agent to invoke RAG tool 
+        # retrieval_results = VectorDBTool(user_id=self.user_id)._run(message)
+        # # print(retrieval_results)
+        # # Create ToolMessage with required tool_call_id
+        # tool_message = ToolMessage(
+        #     content=retrieval_results,
+        #     tool_call_id=str(uuid.uuid4())[:8]
+        # )
+        # # Add ToolMessage to the state
+        # state["messages"] = add_messages(state["messages"], tool_message)
         result = self.graph.invoke(state)
         response = result["messages"][-1].content
         state["messages"] = result["messages"]
@@ -141,7 +149,7 @@ class ChatAgent:
 # Run from backend/ directory like `python -m app.agent.llm_agent`
 if __name__ == "__main__":
 
-    agent = ChatAgent(user_id='123')
+    agent = ChatAgent(user_id='12345')
     print('created agent...')
 
     # Send the message to the agent and process the response
@@ -152,3 +160,15 @@ if __name__ == "__main__":
     # Print the response and the updated state
     print("Agent Response:", response["response"])
     print("Updated State:", agent.serialize_state(response["state"]))
+
+    try:
+        from PIL import Image
+        import io
+        import matplotlib.pyplot as plt
+        graph_image = Image.open(
+            io.BytesIO(agent.graph.get_graph().draw_mermaid_png())
+        )
+        plt.imshow(graph_image)
+        plt.show()
+    except:
+        print('could not display visualization of agent graph')

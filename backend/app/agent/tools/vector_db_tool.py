@@ -49,33 +49,6 @@ class VectorDBTool(BaseTool):
             return f"Query on vector database failed: {str(e)}"
 
 
-# def embed_and_upsert(inputs: List[Dict[str, Any]], user_id: int) -> Dict[str, str]:
-#     """Embed and upsert documents to vector database."""
-#     try:
-#         index = connect_to_index()
-#         print('connected to index')
-#         vectors = []
-#         # Embed all documents and store them in vectors
-#         for item in inputs:
-#             embeddings = get_embeddings([item["content"]],
-#                             dim=1024,
-#                             JINA_API_KEY=os.getenv('JINA_API_KEY'),
-#                             JINA_EMBEDDINGS_URL=os.getenv('JINA_EMBEDDINGS_URL'),
-#                             ) 
-#             print('embeddings created')
-#             embedding = embeddings["data"][0]["embedding"]
-#             vectors.append({
-#                 "id": item['id'],
-#                 "values": embedding,
-#                 "metadata": {'content': item['content'], 'modality': item['modality']}
-#             })
-#         # Upsert all vectors to Pinecone
-#         index.upsert(vectors=vectors, namespace=str(user_id))
-#         print('upserted to vector database')
-#         return {'message': 'Updated vector database successfully'}
-#     except Exception as e:
-#         raise RuntimeError(f"Upsert into vector database failed: {str(e)}")
-
 def embed_and_upsert(inputs: List[Dict[str, Any]], user_id: int) -> Dict[str, str]:
     """Embed and upsert documents to vector database."""
     try:
