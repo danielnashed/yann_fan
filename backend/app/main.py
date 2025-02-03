@@ -5,6 +5,9 @@ from app.db import init as init_db
 import requests
 from requests.exceptions import RequestException
 from dotenv import load_dotenv
+import os
+from phoenix.otel import register
+from openinference.instrumentation.langchain import LangChainInstrumentor
 
 
 load_dotenv()
@@ -27,6 +30,11 @@ check_network_connectivity()
 
 app = FastAPI(title="My Backend API")
 
+# Add Phoenix API Key for tracing
+PHOENIX_API_KEY = os.getenv("PHOENIX_API_KEY")
+os.environ["PHOENIX_CLIENT_HEADERS"] = f"api_key={PHOENIX_API_KEY}"
+os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = "https://app.phoenix.arize.com"
+
 setup_middleware(app)
 app.include_router(conversations.router)
 app.include_router(users.router)
@@ -35,6 +43,13 @@ app.include_router(documents.router)
 @app.on_event("startup")
 async def on_startup():
     await init_db()  # Initialize the database and Beanie
+
+    # configure the Phoenix tracer
+    tracer_provider = register(
+    project_name="yan-fan", # Default is 'default'
+    ) 
+
+    LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
 
 
 @app.on_event("shutdown")
