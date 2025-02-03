@@ -5,9 +5,6 @@ from app.db import init as init_db
 import requests
 from requests.exceptions import RequestException
 from dotenv import load_dotenv
-import os
-from phoenix.otel import register
-from openinference.instrumentation.langchain import LangChainInstrumentor
 
 
 load_dotenv()
@@ -35,26 +32,9 @@ app.include_router(conversations.router)
 app.include_router(users.router)
 app.include_router(documents.router)
 
-# Add Phoenix API Key for tracing
-PHOENIX_API_KEY = os.getenv("PHOENIX_API_KEY")
-print("Phoenix API Key: ", PHOENIX_API_KEY)
-os.environ["PHOENIX_CLIENT_HEADERS"] = f"api_key={PHOENIX_API_KEY}"
-os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = "https://app.phoenix.arize.com"
-
-
 @app.on_event("startup")
 async def on_startup():
     await init_db()  # Initialize the database and Beanie
-
-    # Configure the Phoenix tracer
-    tracer_provider = register(
-        project_name="my-llm-app", 
-        ) 
-    print("Phoenix tracer initialized")
-
-    # Instrument LangChain
-    LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
-    print("LangChain instrumented")
 
 
 @app.on_event("shutdown")
