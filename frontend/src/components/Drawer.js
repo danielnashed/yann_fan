@@ -35,8 +35,6 @@ export default function Drawer({ isOpen, setMessages, setConvId }) {
                             </button>
                         </li>
                     ))}
-                {/* <li><a>Chat History 1</a></li>
-                <li><a>Chat History 2</a></li> */}
             </ul>
         </div>
     );

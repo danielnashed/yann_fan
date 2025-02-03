@@ -1,6 +1,5 @@
 from dotenv import load_dotenv
 from langchain_community.tools.tavily_search import TavilySearchResults
-# from langchain_community.tools.wikidata.tool import WikidataAPIWrapper, WikidataQueryRun
 from langchain_community.tools import WikipediaQueryRun
 from langchain_community.utilities import WikipediaAPIWrapper
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage, FunctionMessage, messages_to_dict
@@ -18,8 +17,6 @@ from pydantic import BaseModel
 from .tools.vector_db_tool import VectorDBTool
 # from .tools.arxiv_search_tool import ArXivSearchTool
 
-class TavilySearchAPIWrapper(BaseModel):
-    tavily_api_key: str
 
 load_dotenv(Path(__file__).parent.parent / '.env')
 tavily_api_key = os.getenv('TAVILY_API_KEY')
@@ -48,10 +45,9 @@ class ChatAgent:
         #     api_key=openai_api_key,
         # )
         tools = [
-            VectorDBTool(user_id=user_id),
             # ArXivSearchTool(user_id=user_id),
+            VectorDBTool(user_id=user_id),
             TavilySearchResults(max_results=3),
-            # WikidataQueryRun(api_wrapper=WikidataAPIWrapper()),
             WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper()),
         ]
         llm = llm.bind_tools(tools)
@@ -76,18 +72,6 @@ class ChatAgent:
         """
 
         state["messages"] = add_messages(state["messages"], HumanMessage(message))
-
-        # # Use this to force agent to invoke RAG tool 
-        # retrieval_results = VectorDBTool(user_id=self.user_id)._run(message)
-        # # print(retrieval_results)
-        # # Create ToolMessage with required tool_call_id
-        # tool_message = ToolMessage(
-        #     content=retrieval_results,
-        #     tool_call_id=str(uuid.uuid4())[:8]
-        # )
-        # # Add ToolMessage to the state
-        # state["messages"] = add_messages(state["messages"], tool_message)
-
         result = self.graph.invoke(state)
         response = result["messages"][-1].content
         state["messages"] = result["messages"]

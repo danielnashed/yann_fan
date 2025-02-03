@@ -19,7 +19,7 @@ def chunk_text_by_paragraphs(text: str, max_chunk_size: int, min_chunk_size: int
             end_index = len(text)
         else:
             # Find the nearest paragraph boundary
-            paragraph_boundary = text.find("\n\n", end_index)
+            paragraph_boundary = text.find("\n\n", start_index, end_index)
             if paragraph_boundary != -1:
                 end_index = paragraph_boundary
 
@@ -32,6 +32,7 @@ def chunk_text_by_paragraphs(text: str, max_chunk_size: int, min_chunk_size: int
 
         start_index = end_index + 1
 
+    ## Post-loop handling becuase the last chunk may not have been added
     if len(current_chunk.strip()) >= min_chunk_size:
         chunks.append(current_chunk.strip())
     elif chunks:

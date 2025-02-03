@@ -87,6 +87,33 @@ export default function Modal() {
                         onChange={handleFileUpload}
                     />
                 </div>
+                {/* Progress Bar */}
+                {isUploading && (
+                    <div className="mb-4">
+                        {Object.keys(uploadProgress).map((fileName) => (
+                            <div key={fileName} className="mb-2">
+                                <p className="text-neutral-400">{fileName}</p>
+                                <div className="relative pt-1">
+                                    <div className="flex mb-2 items-center justify-between">
+                                        <div>
+                                            <span className="font-semibold text-sm text-neutral-300">
+                                                {uploadProgress[fileName]}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex mb-2">
+                                        <div className="w-full bg-neutral-600 rounded-full h-2.5">
+                                            <div
+                                                className="bg-amber-600 h-2.5 rounded-full"
+                                                style={{ width: `${uploadProgress[fileName]}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
                 {/* Uploaded Files Grid */}
                 <div className="overflow-y-auto h-full bg-neutral-900/50 p-4 rounded-md">
                     {uploadedFiles.length > 0 ? (
